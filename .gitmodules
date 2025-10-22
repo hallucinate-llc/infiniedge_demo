@@ -1,15 +1,9 @@
-[submodule "AegisEdgeAI"]
-	path = AegisEdgeAI
-	url = https://github.com/lfedgeai/AegisEdgeAI.git
 [submodule "AIOps"]
 	path = AIOps
 	url = https://github.com/lfedgeai/AIOps.git
 [submodule "eda"]
 	path = eda
 	url = https://github.com/lfedgeai/eda.git
-[submodule "SPEAR"]
-	path = SPEAR
-	url = https://github.com/lfedgeai/SPEAR.git
 [submodule "yomo"]
 	path = yomo
 	url = https://github.com/lfedgeai/yomo.git
@@ -28,3 +22,9 @@
 [submodule "Whisper-Finetune"]
 	path = Whisper-Finetune
 	url = https://github.com/lfedgeai/Whisper-Finetune.git
+[submodule "AegisEdgeAI"]
+	path = AegisEdgeAI
+	url = https://github.com/hallucinate-llc/AegisEdgeAI.git
+[submodule "SPEAR"]
+	path = SPEAR
+	url = https://github.com/hallucinate-llc/SPEAR.git
