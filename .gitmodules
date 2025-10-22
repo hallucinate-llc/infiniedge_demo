@@ -1,0 +1,30 @@
+[submodule "AegisEdgeAI"]
+	path = AegisEdgeAI
+	url = https://github.com/lfedgeai/AegisEdgeAI.git
+[submodule "AIOps"]
+	path = AIOps
+	url = https://github.com/lfedgeai/AIOps.git
+[submodule "eda"]
+	path = eda
+	url = https://github.com/lfedgeai/eda.git
+[submodule "SPEAR"]
+	path = SPEAR
+	url = https://github.com/lfedgeai/SPEAR.git
+[submodule "yomo"]
+	path = yomo
+	url = https://github.com/lfedgeai/yomo.git
+[submodule "shifu"]
+	path = shifu
+	url = https://github.com/lfedgeai/shifu.git
+[submodule "edge-whisper"]
+	path = edge-whisper
+	url = https://github.com/lfedgeai/edge-whisper.git
+[submodule "transformers"]
+	path = transformers
+	url = https://github.com/lfedgeai/transformers.git
+[submodule "Megatron-LM"]
+	path = Megatron-LM
+	url = https://github.com/lfedgeai/Megatron-LM.git
+[submodule "Whisper-Finetune"]
+	path = Whisper-Finetune
+	url = https://github.com/lfedgeai/Whisper-Finetune.git
