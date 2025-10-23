@@ -1,0 +1,560 @@
+services:
+  # AegisEdgeAI - Security and Trust Framework (Hardened)
+  aegis-edge-ai:
+    build:
+      context: ./AegisEdgeAI
+      dockerfile: Dockerfile.simple
+    container_name: aegis-edge-ai
+    restart: unless-stopped
+    user: "1001:1001"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./security/policies/seccomp-profile.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    environment:
+      - TPM2TOOLS_TCTI=swtpm:host=127.0.0.1,port=2321
+      - PYTHONPATH=/app
+      - FLASK_ENV=production
+      - REDIS_HOST=shared-redis
+      - REDIS_PORT=6379
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+      - "5002:5002"
+      - "2321:2321"
+    volumes:
+      - aegis-data:/app/data
+      - aegis-logs:/app/logs
+      - tpm-state:/home/aegis/.swtpm
+      - /tmp:/tmp:noexec,nosuid,size=100m
+    tmpfs:
+      - /var/run:noexec,nosuid,size=10m
+      - /var/tmp:noexec,nosuid,size=10m
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+          pids: 100
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=aegis-edge-ai"
+
+  # SPEAR - Distributed AI Agent Platform (Hardened)
+  spear:
+    build:
+      context: ./SPEAR
+      dockerfile: Dockerfile.infiniedge
+    container_name: spear-platform
+    restart: unless-stopped
+    user: "1001:1001"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./security/policies/seccomp-profile.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      - SPEAR_CONFIG=/app/config.yml
+      - REDIS_HOST=shared-redis
+      - REDIS_PORT=6379
+      - AEGIS_ENDPOINT=http://aegis-edge-ai:5000
+    ports:
+      - "8100-8150:8100-8150"
+      - "9090:9090"
+    volumes:
+      - spear-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    tmpfs:
+      - /var/run:noexec,nosuid,size=10m
+      - /var/tmp:noexec,nosuid,size=10m
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - aegis-edge-ai
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+          pids: 200
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=spear-platform"
+
+  # YoMo - Serverless Framework (Hardened)
+  yomo:
+    build:
+      context: ./yomo
+      dockerfile: Dockerfile.infiniedge
+    container_name: yomo-serverless
+    restart: unless-stopped
+    user: "1001:1001"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./security/policies/seccomp-profile.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    environment:
+      - YOMO_ENV=production
+      - REDIS_HOST=shared-redis
+      - SPEAR_ENDPOINT=http://spear-platform:9090
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - yomo-data:/app/data
+    tmpfs:
+      - /var/run:noexec,nosuid,size=10m
+      - /var/tmp:noexec,nosuid,size=10m
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - spear
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+          pids: 50
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=yomo-serverless"
+
+  # Shared Redis (Hardened)
+  shared-redis:
+    image: redis:7-alpine
+    container_name: shared-redis
+    restart: unless-stopped
+    user: "999:999"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - redis-config:/usr/local/etc/redis
+    tmpfs:
+      - /var/run:noexec,nosuid,size=10m
+    networks:
+      - infiniedge-network
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --timeout 300
+      --tcp-keepalive 60
+      --maxclients 100
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+          pids: 10
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=shared-redis"
+
+  # Shared PostgreSQL (Hardened)
+  shared-postgres:
+    image: postgres:15-alpine
+    container_name: shared-postgres
+    restart: unless-stopped
+    user: "70:70"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_root_password
+      - POSTGRES_DB=infiniedge
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-config:/etc/postgresql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    tmpfs:
+      - /var/run/postgresql:noexec,nosuid,size=10m
+      - /tmp:noexec,nosuid,size=100m
+    networks:
+      - infiniedge-network
+    secrets:
+      - postgres_root_password
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+          pids: 50
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=shared-postgres"
+
+  # Nginx Gateway (Hardened with TLS)
+  nginx-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx-hardened
+    container_name: nginx-gateway
+    restart: unless-stopped
+    user: "101:101"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETUID
+      - SETGID
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-config:/etc/nginx:ro
+      - nginx-cache:/var/cache/nginx
+      - nginx-logs:/var/log/nginx
+    tmpfs:
+      - /var/run:noexec,nosuid,size=10m
+      - /tmp:noexec,nosuid,size=50m
+    networks:
+      - infiniedge-network
+    depends_on:
+      - aegis-edge-ai
+      - spear
+      - yomo
+    secrets:
+      - ssl_cert
+      - ssl_key
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+          pids: 20
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=nginx-gateway"
+
+  # Security Scanner (Trivy)
+  security-scanner:
+    image: aquasec/trivy:latest
+    container_name: security-scanner
+    restart: "no"
+    user: "1001:1001"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - trivy-cache:/root/.cache/trivy
+      - security-reports:/reports
+    networks:
+      - infiniedge-network
+    command: >
+      sh -c "
+      echo 'Starting security scan...' &&
+      trivy image --format json --output /reports/scan-results.json --severity HIGH,CRITICAL infiniedge/aegis-edge-ai:latest &&
+      trivy image --format json --output /reports/scan-spear.json --severity HIGH,CRITICAL infiniedge/spear:latest &&
+      trivy image --format json --output /reports/scan-yomo.json --severity HIGH,CRITICAL infiniedge/yomo:latest &&
+      echo 'Security scan completed'
+      "
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=security-scanner"
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    user: "65534:65534"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    tmpfs:
+      - /tmp:noexec,nosuid,size=10m
+    networks:
+      - infiniedge-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=prometheus"
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    user: "472:472"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    tmpfs:
+      - /tmp:noexec,nosuid,size=10m
+    networks:
+      - infiniedge-network
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    secrets:
+      - grafana_password
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=grafana"
+
+volumes:
+  # Service data volumes
+  aegis-data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./data/aegis
+  spear-data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none  
+      device: ./data/spear
+  yomo-data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./data/yomo
+  
+  # Infrastructure volumes
+  redis-data:
+    driver: local
+  redis-config:
+    driver: local
+  postgres-data:
+    driver: local
+  postgres-config:
+    driver: local
+  
+  # Monitoring volumes
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  
+  # Security volumes
+  trivy-cache:
+    driver: local
+  security-reports:
+    driver: local
+  
+  # Nginx volumes
+  nginx-config:
+    driver: local
+  nginx-cache:
+    driver: local
+  nginx-logs:
+    driver: local
+  
+  # Shared volumes
+  tmp-data:
+    driver: local
+
+secrets:
+  postgres_root_password:
+    file: ./secrets/postgres_root_password
+  postgres_user_password:
+    file: ./secrets/postgres_user_password
+  redis_password:
+    file: ./secrets/redis_password
+  ssl_cert:
+    file: ./secrets/ssl_cert
+  ssl_key:
+    file: ./secrets/ssl_key
+  grafana_password:
+    file: ./secrets/grafana_password
+
+networks:
+  infiniedge-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: infiniedge-br0
+      com.docker.network.bridge.enable_icc: "false"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+    internal: false
+    attachable: false

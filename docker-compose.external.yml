@@ -1,0 +1,145 @@
+# External Orchestration Container for InfinieEdge Demo Platform
+# This Docker Compose file creates a single container that runs ALL submodules
+
+version: '3.8'
+
+networks:
+  infiniedge_external:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+volumes:
+  orchestrator_logs:
+    driver: local
+  orchestrator_data:
+    driver: local
+
+services:
+  infiniedge-orchestrator:
+    build:
+      context: .
+      dockerfile: orchestrator/Dockerfile
+    container_name: infiniedge-all-services
+    hostname: infiniedge-orchestrator
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - PYTHONPATH=/app/services
+      - GOPATH=/go
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/go/bin
+    
+    # Expose all service ports
+    ports:
+      # Main gateway
+      - "80:80"
+      - "443:443"
+      
+      # Individual service ports (for direct access)
+      - "8080:8080"  # AegisEdgeAI
+      - "8081:8081"  # SPEAR
+      - "8082:8082"  # YoMo
+      - "8083:8083"  # Shifu
+      - "8084:8084"  # AIOps
+      - "8085:8085"  # EDA
+      - "8086:8086"  # Edge Whisper
+      - "8087:8087"  # Whisper Finetune
+      - "8088:8088"  # Megatron-LM
+      - "8089:8089"  # Transformers
+      
+      # Special service ports
+      - "9000:9000"  # YoMo Zipper
+      - "9001:9001"  # Additional port 1
+      - "9002:9002"  # Additional port 2
+      - "9003:9003"  # Additional port 3
+      
+      # Monitoring ports
+      - "3000:3000"  # Grafana (if enabled)
+      - "5000:5000"  # Additional monitoring
+    
+    # Volume mounts
+    volumes:
+      - orchestrator_logs:/app/logs
+      - orchestrator_data:/app/data
+      # Mount source code for development (optional)
+      - ./AegisEdgeAI:/app/services/aegis-edge-ai:ro
+      - ./SPEAR:/app/services/spear:ro
+      - ./yomo:/app/services/yomo:ro
+      - ./shifu:/app/services/shifu:ro
+      - ./AIOps:/app/services/aiops:ro
+      - ./eda:/app/services/eda:ro
+      - ./edge-whisper:/app/services/edge-whisper:ro
+      - ./Whisper-Finetune:/app/services/whisper-finetune:ro
+      - ./Megatron-LM:/app/services/megatron-lm:ro
+      - ./transformers:/app/services/transformers:ro
+      
+      # Configuration overrides
+      - ./orchestrator/configs:/app/configs:ro
+      - ./orchestrator/scripts:/app/scripts:ro
+    
+    # Network configuration
+    networks:
+      infiniedge_external:
+        ipv4_address: 172.25.0.100
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Capabilities
+    cap_add:
+      - NET_BIND_SERVICE
+    cap_drop:
+      - ALL
+    
+    # User (run as non-root where possible)
+    # Note: Some services might need root for binding to privileged ports
+    # user: "1001:1001"
+    
+    # Working directory
+    working_dir: /app
+    
+    # Labels
+    labels:
+      - "com.infiniedge.service=orchestrator"
+      - "com.infiniedge.version=1.0.0"
+      - "com.infiniedge.description=All LF Edge AI services in one container"
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    
+    # Additional sysctls if needed
+    sysctls:
+      - net.core.somaxconn=1024
+    
+    # Temporary filesystems
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=1g
+      - /var/tmp:rw,noexec,nosuid,size=512m

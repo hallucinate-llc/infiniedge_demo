@@ -1,0 +1,308 @@
+services:
+  # AegisEdgeAI - Security and Trust Framework (Python)
+  aegis-edge-ai:
+    build:
+      context: ./AegisEdgeAI
+      dockerfile: Dockerfile.simple
+    container_name: aegis-edge-ai
+    restart: unless-stopped
+    environment:
+      - TPM2TOOLS_TCTI=swtpm:host=127.0.0.1,port=2321
+      - PYTHONPATH=/app
+      - FLASK_ENV=production
+      - REDIS_HOST=shared-redis
+      - REDIS_PORT=6379
+    ports:
+      - "5000:5000"  # Agent service
+      - "5001:5001"  # Collector service  
+      - "5002:5002"  # Gateway service
+      - "2321:2321"  # TPM control port
+    volumes:
+      - aegis-data:/app/data
+      - aegis-logs:/app/logs
+      - tpm-state:/home/aegis/.swtpm
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+
+  # SPEAR - Distributed AI Agent Platform (Go/Rust)
+  spear:
+    build:
+      context: ./SPEAR
+      dockerfile: Dockerfile.infiniedge
+    container_name: spear-platform
+    restart: unless-stopped
+    environment:
+      - SPEAR_CONFIG=/app/config.yml
+      - REDIS_HOST=shared-redis
+      - REDIS_PORT=6379
+      - AEGIS_ENDPOINT=http://aegis-edge-ai:5000
+    ports:
+      - "8100-8150:8100-8150"  # Dynamic port range for tasks
+      - "9090:9090"  # SPEAR management API
+    volumes:
+      - spear-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock  # For container management
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - aegis-edge-ai
+
+  # YoMo - Serverless Framework for Edge AI (Go)
+  yomo:
+    build:
+      context: ./yomo
+      dockerfile: Dockerfile.infiniedge
+    container_name: yomo-serverless
+    restart: unless-stopped
+    environment:
+      - YOMO_ENV=production
+      - REDIS_HOST=shared-redis
+      - SPEAR_ENDPOINT=http://spear-platform:9090
+    ports:
+      - "9000:9000"  # YoMo zipper service
+      - "9001:9001"  # YoMo source service
+    volumes:
+      - yomo-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - spear
+
+  # Shifu - Kubernetes IoT Gateway (Go)
+  shifu:
+    build:
+      context: ./shifu
+      dockerfile: Dockerfile.infiniedge
+    container_name: shifu-gateway
+    restart: unless-stopped
+    environment:
+      - SHIFU_ENV=production
+      - YOMO_ENDPOINT=http://yomo-serverless:9000
+    ports:
+      - "8080:8080"  # Shifu HTTP API
+      - "8081:8081"  # Device simulation endpoints
+    volumes:
+      - shifu-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - yomo
+
+  # Edge Whisper - Real-time Speech Recognition (Node.js/TypeScript)
+  edge-whisper:
+    build:
+      context: ./edge-whisper
+      dockerfile: Dockerfile.infiniedge
+    container_name: edge-whisper
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=shared-redis
+      - YOMO_ENDPOINT=http://yomo-serverless:9000
+    ports:
+      - "3000:3000"  # Next.js web interface
+      - "3001:3001"  # WebSocket for real-time audio
+    volumes:
+      - whisper-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - yomo
+
+  # EDA - Data Analysis Platform (Python)
+  eda:
+    build:
+      context: ./eda
+      dockerfile: Dockerfile.infiniedge
+    container_name: eda-platform
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_HOST=shared-redis
+      - DATABASE_URL=postgresql://postgres:postgres@shared-postgres:5432/eda_db
+    ports:
+      - "8000:8000"  # EDA web interface
+    volumes:
+      - eda-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - shared-postgres
+
+  # AIOps - AI Operations Platform (Python)
+  aiops:
+    build:
+      context: ./AIOps
+      dockerfile: Dockerfile.infiniedge
+    container_name: aiops-platform
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_HOST=shared-redis
+      - DATABASE_URL=postgresql://postgres:postgres@shared-postgres:5432/aiops_db
+      - EDA_ENDPOINT=http://eda-platform:8000
+    ports:
+      - "8001:8001"  # Anomaly detection service
+      - "8002:8002"  # LLM processing service
+    volumes:
+      - aiops-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+      - shared-postgres
+      - eda
+
+  # Transformers - ML Model Service (Python)
+  transformers:
+    build:
+      context: ./transformers
+      dockerfile: Dockerfile.infiniedge
+    container_name: transformers-service
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - HF_HOME=/app/cache
+      - TORCH_HOME=/app/torch_cache
+      - REDIS_HOST=shared-redis
+    ports:
+      - "7000:7000"  # Model inference API
+    volumes:
+      - transformers-cache:/app/cache
+      - transformers-models:/app/torch_cache
+      - transformers-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - shared-redis
+
+  # Megatron-LM - Large Model Training (Python)
+  megatron-lm:
+    build:
+      context: ./Megatron-LM
+      dockerfile: Dockerfile.infiniedge
+    container_name: megatron-lm
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - NCCL_DEBUG=INFO
+      - TRANSFORMERS_ENDPOINT=http://transformers-service:7000
+    ports:
+      - "6000:6000"  # Training coordination service
+    volumes:
+      - megatron-data:/app/data
+      - megatron-checkpoints:/app/checkpoints
+    networks:
+      - infiniedge-network
+    depends_on:
+      - transformers
+
+  # Whisper Finetune - Speech Model Training (C/Python)
+  whisper-finetune:
+    build:
+      context: ./Whisper-Finetune
+      dockerfile: Dockerfile.infiniedge
+    container_name: whisper-finetune
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - EDGE_WHISPER_ENDPOINT=http://edge-whisper:3000
+    ports:
+      - "4000:4000"  # Model training API
+    volumes:
+      - whisper-models:/app/models
+      - whisper-data:/app/data
+    networks:
+      - infiniedge-network
+    depends_on:
+      - edge-whisper
+
+  # Shared Services
+  shared-redis:
+    image: redis:7-alpine
+    container_name: shared-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - infiniedge-network
+    command: redis-server --appendonly yes
+
+  shared-postgres:
+    image: postgres:15-alpine
+    container_name: shared-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=infiniedge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - infiniedge-network
+
+  # Nginx Reverse Proxy for unified access
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: nginx-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - infiniedge-network
+    depends_on:
+      - aegis-edge-ai
+      - spear
+      - yomo
+      - shifu
+      - edge-whisper
+      - eda
+      - aiops
+      - transformers
+      - megatron-lm
+      - whisper-finetune
+
+volumes:
+  # Service-specific data
+  aegis-data:
+  aegis-logs:
+  tpm-state:
+  spear-data:
+  yomo-data:
+  shifu-data:
+  whisper-data:
+  eda-data:
+  aiops-data:
+  transformers-data:
+  transformers-cache:
+  transformers-models:
+  megatron-data:
+  megatron-checkpoints:
+  whisper-models:
+  
+  # Shared infrastructure data
+  redis-data:
+  postgres-data:
+  nginx-logs:
+
+networks:
+  infiniedge-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

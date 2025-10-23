@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfinieEdge Demo Platform - All Services</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid #667eea;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .service-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .service-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .service-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .service-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .service-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .service-link {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+        
+        .service-link:hover {
+            background: #5a6fd8;
+        }
+        
+        .service-link.health {
+            background: #28a745;
+        }
+        
+        .service-link.health:hover {
+            background: #218838;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-left: auto;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .system-info {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .system-info h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .info-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #667eea;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 InfinieEdge Demo Platform</h1>
+            <p>All LF Edge AI Services Running Simultaneously</p>
+        </div>
+        
+        <div class="system-info">
+            <h2>System Overview</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-value" id="service-count">10</div>
+                    <div class="info-label">Active Services</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="uptime">Running</div>
+                    <div class="info-label">System Status</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="last-check">Just now</div>
+                    <div class="info-label">Last Health Check</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value">External</div>
+                    <div class="info-label">Container Mode</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">AI</div>
+                    <div class="service-title">AegisEdgeAI</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    AI-powered compliance and security analysis platform for edge computing environments.
+                </div>
+                <div class="service-links">
+                    <a href="/aegis/" class="service-link">Open Service</a>
+                    <a href="/aegis/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">SP</div>
+                    <div class="service-title">SPEAR</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Secure Platform for Edge Analytics and Runtime with advanced security features.
+                </div>
+                <div class="service-links">
+                    <a href="/spear/" class="service-link">Open Service</a>
+                    <a href="/spear/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">YM</div>
+                    <div class="service-title">YoMo</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Serverless framework for edge computing with real-time data processing capabilities.
+                </div>
+                <div class="service-links">
+                    <a href="/yomo/" class="service-link">Open Service</a>
+                    <a href="/yomo/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">SF</div>
+                    <div class="service-title">Shifu</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Kubernetes native IoT device management framework for edge infrastructure.
+                </div>
+                <div class="service-links">
+                    <a href="/shifu/" class="service-link">Open Service</a>
+                    <a href="/shifu/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">AO</div>
+                    <div class="service-title">AIOps</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    AI-powered operations platform for intelligent monitoring and automation.
+                </div>
+                <div class="service-links">
+                    <a href="/aiops/" class="service-link">Open Service</a>
+                    <a href="/aiops/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">ED</div>
+                    <div class="service-title">EDA</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Event-Driven Architecture platform for scalable microservices communication.
+                </div>
+                <div class="service-links">
+                    <a href="/eda/" class="service-link">Open Service</a>
+                    <a href="/eda/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">EW</div>
+                    <div class="service-title">Edge Whisper</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Edge-optimized speech recognition service with local processing capabilities.
+                </div>
+                <div class="service-links">
+                    <a href="/edge-whisper/" class="service-link">Open Service</a>
+                    <a href="/edge-whisper/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">WF</div>
+                    <div class="service-title">Whisper Finetune</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Model fine-tuning platform for customizing Whisper models for specific use cases.
+                </div>
+                <div class="service-links">
+                    <a href="/whisper-finetune/" class="service-link">Open Service</a>
+                    <a href="/whisper-finetune/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">ML</div>
+                    <div class="service-title">Megatron-LM</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Large language model training platform for developing custom AI models.
+                </div>
+                <div class="service-links">
+                    <a href="/megatron/" class="service-link">Open Service</a>
+                    <a href="/megatron/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">TF</div>
+                    <div class="service-title">Transformers</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="service-description">
+                    Hugging Face Transformers library for state-of-the-art NLP model deployment.
+                </div>
+                <div class="service-links">
+                    <a href="/transformers/" class="service-link">Open Service</a>
+                    <a href="/transformers/health" class="service-link health">Health Check</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="refresh-btn" onclick="location.reload()" title="Refresh Dashboard">↻</button>
+    
+    <script>
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+        }, 30000);
+        
+        // Update last check time immediately
+        document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+        
+        // Check service health status
+        async function checkServiceHealth() {
+            const services = [
+                '/aegis/health', '/spear/health', '/yomo/health', '/shifu/health',
+                '/aiops/health', '/eda/health', '/edge-whisper/health',
+                '/whisper-finetune/health', '/megatron/health', '/transformers/health'
+            ];
+            
+            let healthyCount = 0;
+            
+            for (const service of services) {
+                try {
+                    const response = await fetch(service);
+                    if (response.ok) {
+                        healthyCount++;
+                    }
+                } catch (error) {
+                    console.log(`Service ${service} health check failed:`, error);
+                }
+            }
+            
+            document.getElementById('service-count').textContent = `${healthyCount}/${services.length}`;
+            document.getElementById('uptime').textContent = healthyCount === services.length ? 'All Healthy' : 'Some Issues';
+        }
+        
+        // Check health on load and every minute
+        checkServiceHealth();
+        setInterval(checkServiceHealth, 60000);
+    </script>
+</body>
+</html>
