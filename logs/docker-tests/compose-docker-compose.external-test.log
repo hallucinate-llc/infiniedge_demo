@@ -1,0 +1,6 @@
+Compose file: docker-compose.external.yml
+Test started: Wed Oct 22 11:22:50 PM PDT 2025
+=========================
+./scripts/docker-test-suite.sh: line 169: docker-compose: command not found
+VALIDATION: FAILED
+Test completed: Wed Oct 22 11:22:50 PM PDT 2025

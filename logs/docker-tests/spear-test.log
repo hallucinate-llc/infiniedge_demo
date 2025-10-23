@@ -1,0 +1,5 @@
+Container: spear
+Dockerfile: SPEAR/Dockerfile
+Test started: Wed Oct 22 11:22:13 PM PDT 2025
+=========================
+SKIPPED: Dockerfile not found

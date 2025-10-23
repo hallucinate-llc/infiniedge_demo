@@ -1,0 +1,7 @@
+Orchestrator compose test
+Project: infiniteedge-test-1761200570
+Compose file: docker-compose.yml
+Test started: Wed Oct 22 11:22:50 PM PDT 2025
+=========================
+./scripts/docker-test-suite.sh: line 217: docker-compose: command not found
+STARTUP: FAILED

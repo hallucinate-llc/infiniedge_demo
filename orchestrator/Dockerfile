@@ -41,18 +41,21 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Go 1.23.x (newer version for compatibility)
-RUN wget https://go.dev/dl/go1.23.2.linux-arm64.tar.gz && \
-    tar -C /usr/local -xzf go1.23.2.linux-arm64.tar.gz && \
-    rm go1.23.2.linux-arm64.tar.gz
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then GOARCH="amd64"; else GOARCH="arm64"; fi && \
+    wget https://go.dev/dl/go1.23.2.linux-${GOARCH}.tar.gz && \
+    tar -C /usr/local -xzf go1.23.2.linux-${GOARCH}.tar.gz && \
+    rm go1.23.2.linux-${GOARCH}.tar.gz
 
 # Set up Go environment
 ENV GOPATH=/go
 ENV GOROOT=/usr/local/go
 ENV PATH=/usr/local/go/bin:$PATH
 
-# Create nginx directories with proper permissions
+# Create nginx and supervisor directories with proper permissions
 RUN mkdir -p /var/log/nginx /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /var/lib/nginx/uwsgi /var/lib/nginx/scgi && \
-    chmod 755 /var/log/nginx /var/lib/nginx && \
+    mkdir -p /var/log/supervisor /etc/supervisor/conf.d && \
+    chmod 755 /var/log/nginx /var/lib/nginx /var/log/supervisor && \
     chmod 755 /var/lib/nginx/*
 
 # Set up Python environment
@@ -109,20 +112,22 @@ RUN cd megatron-lm && \
     if [ -f requirements.txt ]; then pip3 install -r requirements.txt || echo "Megatron requirements failed, continuing..."; fi && \
     if [ -f setup.py ]; then pip3 install -e . || echo "Megatron setup.py failed, continuing..."; fi
 
-    # Node.js services
-    RUN cd edge-whisper && \
-        if [ -f package.json ]; then npm install --legacy-peer-deps || echo "Edge Whisper npm install failed, continuing..."; fi
+# Node.js services
+RUN cd edge-whisper && \
+    if [ -f package.json ]; then npm install --legacy-peer-deps || echo "Edge Whisper npm install failed, continuing..."; fi
 
-    # Go services
-    RUN cd spear && \
-        if [ -f go.mod ]; then go mod download && go mod tidy && go build -o bin/spear ./cmd/spear || echo "SPEAR build failed, continuing..."; fi
+# Go services
+RUN cd spear && \
+    mkdir -p bin && \
+    if [ -f go.mod ]; then go mod download && go mod tidy && go build -o bin/spear ./cmd/spear || echo "SPEAR build failed, continuing..."; fi
 
-    RUN cd yomo && \
-        mkdir -p bin && \
-        if [ -f go.mod ]; then go mod download && go mod tidy && go build -o bin/yomo . || echo "YoMo build failed, continuing..."; fi
+RUN cd yomo && \
+    mkdir -p bin && \
+    if [ -f go.mod ]; then go mod download && go mod tidy && go build -o bin/yomo . || echo "YoMo build failed, continuing..."; fi
 
-    RUN cd shifu && \
-        if [ -f go.mod ]; then go mod download && go mod tidy && make build || echo "Shifu build failed, continuing..."; fi
+RUN cd shifu && \
+    mkdir -p bin && \
+    if [ -f go.mod ]; then go mod download && go mod tidy && make build || echo "Shifu build failed, continuing..."; fi
 
 # Create supervisor configuration for running all services
 COPY orchestrator/supervisord.conf /etc/supervisor/conf.d/infiniedge.conf

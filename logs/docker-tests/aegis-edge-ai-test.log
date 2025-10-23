@@ -1,0 +1,369 @@
+Container: aegis-edge-ai
+Dockerfile: AegisEdgeAI/Dockerfile.simple
+Test started: Wed Oct 22 11:22:13 PM PDT 2025
+=========================
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.simple
+#1 transferring dockerfile: 3.65kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/ubuntu:22.04
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:22.04
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 15.09MB 0.0s done
+#5 DONE 0.1s
+
+#6 [ 2/12] RUN apt-get update && apt-get install -y     python3     python3-pip     python3-venv     build-essential     git     swtpm     tpm2-tools     libtss2-dev     libssl-dev     netcat-openbsd     curl     procps     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 3/12] RUN useradd -m -s /bin/bash aegis &&     mkdir -p /app /var/lib/swtpm-localca &&     chown -R aegis:aegis /app /var/lib/swtpm-localca
+#7 CACHED
+
+#8 [ 4/12] WORKDIR /app
+#8 CACHED
+
+#9 [ 5/12] COPY --chown=aegis:aegis . .
+#9 DONE 0.1s
+
+#10 [ 6/12] RUN python3 -m venv .venv &&     .venv/bin/pip install --upgrade pip &&     .venv/bin/pip install -r zero-trust/requirements.txt
+#10 1.776 Requirement already satisfied: pip in ./.venv/lib/python3.10/site-packages (22.0.2)
+#10 1.883 Collecting pip
+#10 1.939   Downloading pip-25.2-py3-none-any.whl (1.8 MB)
+#10 2.047      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 16.7 MB/s eta 0:00:00
+#10 2.060 Installing collected packages: pip
+#10 2.060   Attempting uninstall: pip
+#10 2.061     Found existing installation: pip 22.0.2
+#10 2.154     Uninstalling pip-22.0.2:
+#10 2.157       Successfully uninstalled pip-22.0.2
+#10 2.484 Successfully installed pip-25.2
+#10 2.774 Collecting Flask==3.0.0 (from -r zero-trust/requirements.txt (line 1))
+#10 2.804   Downloading flask-3.0.0-py3-none-any.whl.metadata (3.6 kB)
+#10 2.836 Collecting requests==2.31.0 (from -r zero-trust/requirements.txt (line 2))
+#10 2.842   Downloading requests-2.31.0-py3-none-any.whl.metadata (4.6 kB)
+#10 2.867 Collecting opentelemetry-api==1.21.0 (from -r zero-trust/requirements.txt (line 3))
+#10 2.873   Downloading opentelemetry_api-1.21.0-py3-none-any.whl.metadata (1.4 kB)
+#10 2.985 Collecting opentelemetry-sdk==1.21.0 (from -r zero-trust/requirements.txt (line 4))
+#10 2.991   Downloading opentelemetry_sdk-1.21.0-py3-none-any.whl.metadata (1.5 kB)
+#10 3.092 Collecting opentelemetry-exporter-otlp==1.21.0 (from -r zero-trust/requirements.txt (line 5))
+#10 3.097   Downloading opentelemetry_exporter_otlp-1.21.0-py3-none-any.whl.metadata (2.3 kB)
+#10 3.197 Collecting opentelemetry-instrumentation-flask==0.42b0 (from -r zero-trust/requirements.txt (line 6))
+#10 3.213   Downloading opentelemetry_instrumentation_flask-0.42b0-py3-none-any.whl.metadata (2.4 kB)
+#10 3.315 Collecting opentelemetry-instrumentation-requests==0.42b0 (from -r zero-trust/requirements.txt (line 7))
+#10 3.320   Downloading opentelemetry_instrumentation_requests-0.42b0-py3-none-any.whl.metadata (2.7 kB)
+#10 3.417 Collecting cryptography==41.0.7 (from -r zero-trust/requirements.txt (line 8))
+#10 3.423   Downloading cryptography-41.0.7-cp37-abi3-manylinux_2_28_aarch64.whl.metadata (5.2 kB)
+#10 3.449 Collecting pyOpenSSL==23.3.0 (from -r zero-trust/requirements.txt (line 9))
+#10 3.453   Downloading pyOpenSSL-23.3.0-py3-none-any.whl.metadata (12 kB)
+#10 3.477 Collecting python-dotenv==1.0.0 (from -r zero-trust/requirements.txt (line 10))
+#10 3.481   Downloading python_dotenv-1.0.0-py3-none-any.whl.metadata (21 kB)
+#10 3.512 Collecting structlog==23.2.0 (from -r zero-trust/requirements.txt (line 11))
+#10 3.517   Downloading structlog-23.2.0-py3-none-any.whl.metadata (7.6 kB)
+#10 3.542 Collecting gunicorn==21.2.0 (from -r zero-trust/requirements.txt (line 12))
+#10 3.547   Downloading gunicorn-21.2.0-py3-none-any.whl.metadata (4.1 kB)
+#10 3.649 Collecting prometheus-client==0.19.0 (from -r zero-trust/requirements.txt (line 13))
+#10 3.654   Downloading prometheus_client-0.19.0-py3-none-any.whl.metadata (1.8 kB)
+#10 3.752 Collecting healthcheck==1.3.3 (from -r zero-trust/requirements.txt (line 14))
+#10 3.771   Downloading healthcheck-1.3.3.tar.gz (5.6 kB)
+#10 3.782   Installing build dependencies: started
+#10 4.236   Installing build dependencies: finished with status 'done'
+#10 4.236   Getting requirements to build wheel: started
+#10 4.390   Getting requirements to build wheel: finished with status 'done'
+#10 4.391   Preparing metadata (pyproject.toml): started
+#10 4.465   Preparing metadata (pyproject.toml): finished with status 'done'
+#10 4.528 Collecting pydantic>=2.0.0 (from -r zero-trust/requirements.txt (line 15))
+#10 4.532   Downloading pydantic-2.12.3-py3-none-any.whl.metadata (87 kB)
+#10 4.562 Collecting pydantic-settings>=2.0.0 (from -r zero-trust/requirements.txt (line 16))
+#10 4.566   Downloading pydantic_settings-2.11.0-py3-none-any.whl.metadata (3.4 kB)
+#10 4.621 Collecting psutil>=5.9.0 (from -r zero-trust/requirements.txt (line 17))
+#10 4.626   Downloading psutil-7.1.1-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (23 kB)
+#10 4.655 Collecting Werkzeug>=3.0.0 (from Flask==3.0.0->-r zero-trust/requirements.txt (line 1))
+#10 4.660   Downloading werkzeug-3.1.3-py3-none-any.whl.metadata (3.7 kB)
+#10 4.684 Collecting Jinja2>=3.1.2 (from Flask==3.0.0->-r zero-trust/requirements.txt (line 1))
+#10 4.688   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#10 4.709 Collecting itsdangerous>=2.1.2 (from Flask==3.0.0->-r zero-trust/requirements.txt (line 1))
+#10 4.714   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#10 4.742 Collecting click>=8.1.3 (from Flask==3.0.0->-r zero-trust/requirements.txt (line 1))
+#10 4.747   Downloading click-8.3.0-py3-none-any.whl.metadata (2.6 kB)
+#10 4.769 Collecting blinker>=1.6.2 (from Flask==3.0.0->-r zero-trust/requirements.txt (line 1))
+#10 4.774   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#10 4.827 Collecting charset-normalizer<4,>=2 (from requests==2.31.0->-r zero-trust/requirements.txt (line 2))
+#10 4.833   Downloading charset_normalizer-3.4.4-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (37 kB)
+#10 4.857 Collecting idna<4,>=2.5 (from requests==2.31.0->-r zero-trust/requirements.txt (line 2))
+#10 4.862   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+#10 4.899 Collecting urllib3<3,>=1.21.1 (from requests==2.31.0->-r zero-trust/requirements.txt (line 2))
+#10 4.905   Downloading urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+#10 4.932 Collecting certifi>=2017.4.17 (from requests==2.31.0->-r zero-trust/requirements.txt (line 2))
+#10 4.937   Downloading certifi-2025.10.5-py3-none-any.whl.metadata (2.5 kB)
+#10 4.961 Collecting deprecated>=1.2.6 (from opentelemetry-api==1.21.0->-r zero-trust/requirements.txt (line 3))
+#10 4.974   Downloading Deprecated-1.2.18-py2.py3-none-any.whl.metadata (5.7 kB)
+#10 5.015 Collecting importlib-metadata<7.0,>=6.0 (from opentelemetry-api==1.21.0->-r zero-trust/requirements.txt (line 3))
+#10 5.021   Downloading importlib_metadata-6.11.0-py3-none-any.whl.metadata (4.9 kB)
+#10 5.047 Collecting opentelemetry-semantic-conventions==0.42b0 (from opentelemetry-sdk==1.21.0->-r zero-trust/requirements.txt (line 4))
+#10 5.052   Downloading opentelemetry_semantic_conventions-0.42b0-py3-none-any.whl.metadata (2.3 kB)
+#10 5.076 Collecting typing-extensions>=3.7.4 (from opentelemetry-sdk==1.21.0->-r zero-trust/requirements.txt (line 4))
+#10 5.081   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+#10 5.104 Collecting opentelemetry-exporter-otlp-proto-grpc==1.21.0 (from opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.111   Downloading opentelemetry_exporter_otlp_proto_grpc-1.21.0-py3-none-any.whl.metadata (2.4 kB)
+#10 5.199 Collecting opentelemetry-exporter-otlp-proto-http==1.21.0 (from opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.204   Downloading opentelemetry_exporter_otlp_proto_http-1.21.0-py3-none-any.whl.metadata (2.4 kB)
+#10 5.300 Collecting opentelemetry-instrumentation-wsgi==0.42b0 (from opentelemetry-instrumentation-flask==0.42b0->-r zero-trust/requirements.txt (line 6))
+#10 5.305   Downloading opentelemetry_instrumentation_wsgi-0.42b0-py3-none-any.whl.metadata (2.1 kB)
+#10 5.330 Collecting opentelemetry-instrumentation==0.42b0 (from opentelemetry-instrumentation-flask==0.42b0->-r zero-trust/requirements.txt (line 6))
+#10 5.403   Downloading opentelemetry_instrumentation-0.42b0-py3-none-any.whl.metadata (5.9 kB)
+#10 5.433 Collecting opentelemetry-util-http==0.42b0 (from opentelemetry-instrumentation-flask==0.42b0->-r zero-trust/requirements.txt (line 6))
+#10 5.438   Downloading opentelemetry_util_http-0.42b0-py3-none-any.whl.metadata (2.5 kB)
+#10 5.462 Collecting packaging>=21.0 (from opentelemetry-instrumentation-flask==0.42b0->-r zero-trust/requirements.txt (line 6))
+#10 5.467   Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+#10 5.530 Collecting cffi>=1.12 (from cryptography==41.0.7->-r zero-trust/requirements.txt (line 8))
+#10 5.536   Downloading cffi-2.0.0-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl.metadata (2.6 kB)
+#10 5.567 Collecting backoff<3.0.0,>=1.10.0 (from opentelemetry-exporter-otlp-proto-grpc==1.21.0->opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.571   Downloading backoff-2.2.1-py3-none-any.whl.metadata (14 kB)
+#10 5.597 Collecting googleapis-common-protos~=1.52 (from opentelemetry-exporter-otlp-proto-grpc==1.21.0->opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.601   Downloading googleapis_common_protos-1.71.0-py3-none-any.whl.metadata (9.4 kB)
+#10 5.873 Collecting grpcio<2.0.0,>=1.0.0 (from opentelemetry-exporter-otlp-proto-grpc==1.21.0->opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.878   Downloading grpcio-1.76.0-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl.metadata (3.7 kB)
+#10 5.912 Collecting opentelemetry-exporter-otlp-proto-common==1.21.0 (from opentelemetry-exporter-otlp-proto-grpc==1.21.0->opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.917   Downloading opentelemetry_exporter_otlp_proto_common-1.21.0-py3-none-any.whl.metadata (1.8 kB)
+#10 5.942 Collecting opentelemetry-proto==1.21.0 (from opentelemetry-exporter-otlp-proto-grpc==1.21.0->opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 5.949   Downloading opentelemetry_proto-1.21.0-py3-none-any.whl.metadata (2.3 kB)
+#10 5.976 Requirement already satisfied: setuptools>=16.0 in ./.venv/lib/python3.10/site-packages (from opentelemetry-instrumentation==0.42b0->opentelemetry-instrumentation-flask==0.42b0->-r zero-trust/requirements.txt (line 6)) (59.6.0)
+#10 6.040 Collecting wrapt<2.0.0,>=1.0.0 (from opentelemetry-instrumentation==0.42b0->opentelemetry-instrumentation-flask==0.42b0->-r zero-trust/requirements.txt (line 6))
+#10 6.046   Downloading wrapt-1.17.3-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (6.4 kB)
+#10 6.135 Collecting protobuf<5.0,>=3.19 (from opentelemetry-proto==1.21.0->opentelemetry-exporter-otlp-proto-grpc==1.21.0->opentelemetry-exporter-otlp==1.21.0->-r zero-trust/requirements.txt (line 5))
+#10 6.140   Downloading protobuf-4.25.8-cp37-abi3-manylinux2014_aarch64.whl.metadata (541 bytes)
+#10 6.212 Collecting zipp>=0.5 (from importlib-metadata<7.0,>=6.0->opentelemetry-api==1.21.0->-r zero-trust/requirements.txt (line 3))
+#10 6.216   Downloading zipp-3.23.0-py3-none-any.whl.metadata (3.6 kB)
+#10 6.242 Collecting annotated-types>=0.6.0 (from pydantic>=2.0.0->-r zero-trust/requirements.txt (line 15))
+#10 6.248   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+#10 6.604 Collecting pydantic-core==2.41.4 (from pydantic>=2.0.0->-r zero-trust/requirements.txt (line 15))
+#10 6.610   Downloading pydantic_core-2.41.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl.metadata (7.3 kB)
+#10 6.640 Collecting typing-inspection>=0.4.2 (from pydantic>=2.0.0->-r zero-trust/requirements.txt (line 15))
+#10 6.645   Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+#10 6.678 Collecting pycparser (from cffi>=1.12->cryptography==41.0.7->-r zero-trust/requirements.txt (line 8))
+#10 6.683   Downloading pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+#10 6.726 Collecting MarkupSafe>=2.0 (from Jinja2>=3.1.2->Flask==3.0.0->-r zero-trust/requirements.txt (line 1))
+#10 6.731   Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl.metadata (2.7 kB)
+#10 6.752 Downloading flask-3.0.0-py3-none-any.whl (99 kB)
+#10 6.765 Downloading requests-2.31.0-py3-none-any.whl (62 kB)
+#10 6.780 Downloading opentelemetry_api-1.21.0-py3-none-any.whl (57 kB)
+#10 6.872 Downloading opentelemetry_sdk-1.21.0-py3-none-any.whl (105 kB)
+#10 6.890 Downloading opentelemetry_exporter_otlp-1.21.0-py3-none-any.whl (7.0 kB)
+#10 6.903 Downloading opentelemetry_instrumentation_flask-0.42b0-py3-none-any.whl (14 kB)
+#10 6.962 Downloading opentelemetry_instrumentation_requests-0.42b0-py3-none-any.whl (11 kB)
+#10 6.975 Downloading cryptography-41.0.7-cp37-abi3-manylinux_2_28_aarch64.whl (4.1 MB)
+#10 7.074    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.1/4.1 MB 42.4 MB/s  0:00:00
+#10 7.082 Downloading pyOpenSSL-23.3.0-py3-none-any.whl (58 kB)
+#10 7.095 Downloading python_dotenv-1.0.0-py3-none-any.whl (19 kB)
+#10 7.108 Downloading structlog-23.2.0-py3-none-any.whl (62 kB)
+#10 7.121 Downloading gunicorn-21.2.0-py3-none-any.whl (80 kB)
+#10 7.136 Downloading prometheus_client-0.19.0-py3-none-any.whl (54 kB)
+#10 7.151 Downloading opentelemetry_exporter_otlp_proto_grpc-1.21.0-py3-none-any.whl (18 kB)
+#10 7.245 Downloading opentelemetry_exporter_otlp_proto_common-1.21.0-py3-none-any.whl (17 kB)
+#10 7.261 Downloading opentelemetry_exporter_otlp_proto_http-1.21.0-py3-none-any.whl (16 kB)
+#10 7.274 Downloading opentelemetry_instrumentation-0.42b0-py3-none-any.whl (25 kB)
+#10 7.364 Downloading opentelemetry_instrumentation_wsgi-0.42b0-py3-none-any.whl (13 kB)
+#10 7.378 Downloading opentelemetry_proto-1.21.0-py3-none-any.whl (50 kB)
+#10 7.391 Downloading opentelemetry_semantic_conventions-0.42b0-py3-none-any.whl (36 kB)
+#10 7.403 Downloading opentelemetry_util_http-0.42b0-py3-none-any.whl (6.9 kB)
+#10 7.415 Downloading backoff-2.2.1-py3-none-any.whl (15 kB)
+#10 7.426 Downloading charset_normalizer-3.4.4-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (148 kB)
+#10 7.440 Downloading googleapis_common_protos-1.71.0-py3-none-any.whl (294 kB)
+#10 7.539 Downloading grpcio-1.76.0-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (6.4 MB)
+#10 7.643    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.4/6.4 MB 63.5 MB/s  0:00:00
+#10 7.649 Downloading idna-3.11-py3-none-any.whl (71 kB)
+#10 7.659 Downloading importlib_metadata-6.11.0-py3-none-any.whl (23 kB)
+#10 7.674 Downloading protobuf-4.25.8-cp37-abi3-manylinux2014_aarch64.whl (294 kB)
+#10 7.690 Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+#10 7.703 Downloading urllib3-2.5.0-py3-none-any.whl (129 kB)
+#10 7.795 Downloading wrapt-1.17.3-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (83 kB)
+#10 7.833 Downloading pydantic-2.12.3-py3-none-any.whl (462 kB)
+#10 7.851 Downloading pydantic_core-2.41.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (2.0 MB)
+#10 7.898    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 42.5 MB/s  0:00:00
+#10 7.904 Downloading pydantic_settings-2.11.0-py3-none-any.whl (48 kB)
+#10 7.917 Downloading psutil-7.1.1-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (292 kB)
+#10 7.936 Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+#10 7.951 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#10 7.964 Downloading certifi-2025.10.5-py3-none-any.whl (163 kB)
+#10 7.979 Downloading cffi-2.0.0-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (216 kB)
+#10 7.995 Downloading click-8.3.0-py3-none-any.whl (107 kB)
+#10 8.010 Downloading Deprecated-1.2.18-py2.py3-none-any.whl (10.0 kB)
+#10 8.022 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#10 8.036 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#10 8.051 Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (22 kB)
+#10 8.064 Downloading packaging-25.0-py3-none-any.whl (66 kB)
+#10 8.078 Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+#10 8.091 Downloading werkzeug-3.1.3-py3-none-any.whl (224 kB)
+#10 8.106 Downloading zipp-3.23.0-py3-none-any.whl (10 kB)
+#10 8.120 Downloading pycparser-2.23-py3-none-any.whl (118 kB)
+#10 8.170 Building wheels for collected packages: healthcheck
+#10 8.171   Building wheel for healthcheck (pyproject.toml): started
+#10 8.261   Building wheel for healthcheck (pyproject.toml): finished with status 'done'
+#10 8.262   Created wheel for healthcheck: filename=healthcheck-1.3.3-py3-none-any.whl size=4373 sha256=2dfe8a13e787b6f5a0aff3ba8c7ea2f780c78d58fd80b9e970959d09385d1c0e
+#10 8.262   Stored in directory: /root/.cache/pip/wheels/94/83/1c/3c24a2fd93d54a5e59908b94df211af2a326452e3d370e62ba
+#10 8.263 Successfully built healthcheck
+#10 8.291 Installing collected packages: healthcheck, zipp, wrapt, urllib3, typing-extensions, structlog, python-dotenv, pycparser, psutil, protobuf, prometheus-client, packaging, opentelemetry-util-http, opentelemetry-semantic-conventions, MarkupSafe, itsdangerous, idna, click, charset-normalizer, certifi, blinker, backoff, annotated-types, Werkzeug, typing-inspection, requests, pydantic-core, opentelemetry-proto, Jinja2, importlib-metadata, gunicorn, grpcio, googleapis-common-protos, deprecated, cffi, pydantic, opentelemetry-exporter-otlp-proto-common, opentelemetry-api, Flask, cryptography, pyOpenSSL, pydantic-settings, opentelemetry-sdk, opentelemetry-instrumentation, opentelemetry-instrumentation-wsgi, opentelemetry-instrumentation-requests, opentelemetry-exporter-otlp-proto-http, opentelemetry-exporter-otlp-proto-grpc, opentelemetry-instrumentation-flask, opentelemetry-exporter-otlp
+#10 9.486 
+#10 9.489 Successfully installed Flask-3.0.0 Jinja2-3.1.6 MarkupSafe-3.0.3 Werkzeug-3.1.3 annotated-types-0.7.0 backoff-2.2.1 blinker-1.9.0 certifi-2025.10.5 cffi-2.0.0 charset-normalizer-3.4.4 click-8.3.0 cryptography-41.0.7 deprecated-1.2.18 googleapis-common-protos-1.71.0 grpcio-1.76.0 gunicorn-21.2.0 healthcheck-1.3.3 idna-3.11 importlib-metadata-6.11.0 itsdangerous-2.2.0 opentelemetry-api-1.21.0 opentelemetry-exporter-otlp-1.21.0 opentelemetry-exporter-otlp-proto-common-1.21.0 opentelemetry-exporter-otlp-proto-grpc-1.21.0 opentelemetry-exporter-otlp-proto-http-1.21.0 opentelemetry-instrumentation-0.42b0 opentelemetry-instrumentation-flask-0.42b0 opentelemetry-instrumentation-requests-0.42b0 opentelemetry-instrumentation-wsgi-0.42b0 opentelemetry-proto-1.21.0 opentelemetry-sdk-1.21.0 opentelemetry-semantic-conventions-0.42b0 opentelemetry-util-http-0.42b0 packaging-25.0 prometheus-client-0.19.0 protobuf-4.25.8 psutil-7.1.1 pyOpenSSL-23.3.0 pycparser-2.23 pydantic-2.12.3 pydantic-core-2.41.4 pydantic-settings-2.11.0 python-dotenv-1.0.0 requests-2.31.0 structlog-23.2.0 typing-extensions-4.15.0 typing-inspection-0.4.2 urllib3-2.5.0 wrapt-1.17.3 zipp-3.23.0
+#10 DONE 9.9s
+
+#11 [ 7/12] RUN chmod +x zero-trust/system-setup.sh     zero-trust/system-setup-arm64.sh     zero-trust/tpm/swtpm.sh     zero-trust/tpm/tpm-ek-ak-persist.sh     zero-trust/initall.sh     test-arm64-implementation.sh     deploy-arm64.sh
+#11 DONE 0.2s
+
+#12 [ 8/12] WORKDIR /app/zero-trust/tpm
+#12 DONE 0.0s
+
+#13 [ 9/12] RUN make clean && make
+#13 0.149 rm -f tpm-app-persist
+#13 0.162 Building for architecture: aarch64 on Linux
+#13 0.163 Using compiler: gcc
+#13 0.164 Architecture flags: -march=armv8-a
+#13 0.164 Include paths: -I/usr/local/include -I/usr/include/
+#13 0.165 Library paths: -L/usr/local/lib -L/usr/lib
+#13 0.165 gcc -Wall -Werror -I/usr/local/include -I/usr/include/ -Wno-deprecated-declarations -march=armv8-a tpm-app-persist.c -o tpm-app-persist -L/usr/local/lib -L/usr/lib -ltss2-esys -ltss2-mu -ltss2-tctildr -lssl -lcrypto 
+#13 DONE 0.4s
+
+#14 [10/12] WORKDIR /app
+#14 DONE 0.1s
+
+#15 [11/12] RUN mkdir -p ~/.swtpm/ztpm
+#15 DONE 0.2s
+
+#16 [12/12] RUN echo '#!/bin/bash' > start-simple.sh &&     echo 'set -e' >> start-simple.sh &&     echo 'source .venv/bin/activate' >> start-simple.sh &&     echo 'echo "=== Starting AegisEdgeAI on ARM64 ==="' >> start-simple.sh &&     echo 'echo "Architecture: $(uname -m)"' >> start-simple.sh &&     echo 'echo "TPM Tools: $(swtpm --version | head -1)"' >> start-simple.sh &&     echo 'echo "Python: $(python --version)"' >> start-simple.sh &&     echo '' >> start-simple.sh &&     echo '# Start software TPM in background' >> start-simple.sh &&     echo 'echo "Starting software TPM..."' >> start-simple.sh &&     echo 'cd zero-trust/tpm' >> start-simple.sh &&     echo './swtpm.sh &' >> start-simple.sh &&     echo 'sleep 5' >> start-simple.sh &&     echo '' >> start-simple.sh &&     echo '# Initialize TPM keys' >> start-simple.sh &&     echo 'echo "Initializing TPM keys..."' >> start-simple.sh &&     echo './tpm-ek-ak-persist.sh' >> start-simple.sh &&     echo 'cd ../..' >> start-simple.sh &&     echo '' >> start-simple.sh &&     echo '# Start services' >> start-simple.sh &&     echo 'echo "Starting AegisEdgeAI services..."' >> start-simple.sh &&     echo 'cd zero-trust' >> start-simple.sh &&     echo 'python agent/app.py &' >> start-simple.sh &&     echo 'python collector/app.py &' >> start-simple.sh &&     echo 'python gateway/app.py &' >> start-simple.sh &&     echo '' >> start-simple.sh &&     echo '# Keep container running' >> start-simple.sh &&     echo 'echo "All services started. Keeping container alive..."' >> start-simple.sh &&     echo 'tail -f /dev/null' >> start-simple.sh &&     chmod +x start-simple.sh
+#16 DONE 0.2s
+
+#17 exporting to image
+#17 exporting layers
+#17 exporting layers 0.6s done
+#17 writing image sha256:cc77c57bcc63988e33995f35267dfe6caf3bcda67b9908512530290a79f014b1 done
+#17 naming to docker.io/library/infiniteedge-test-aegis-edge-ai-1761200533 done
+#17 DONE 0.7s
+BUILD: SUCCESS
+STARTUP: SUCCESS
+CONTAINER_ID: 6a7713240720e815b6e3f89b213a506d437eb9821527e7f12ceacae9f0e9dcb8
+RUNNING: SUCCESS
+=== Starting AegisEdgeAI on ARM64 ===
+Architecture: aarch64
+TPM Tools: TPM emulator version 0.6.3, Copyright (c) 2014-2021 IBM Corp.
+Python: Python 3.10.12
+Starting software TPM...
+[INFO] ARM64 Linux detected - using system packages
+[INFO] Using TPM2TOOLS_TCTI=swtpm:host=127.0.0.1,port=2321
+[INFO] Using PREFIX=/usr
+TPM2_PT_FAMILY_INDICATOR:
+  raw: 0x322E3000
+  value: "2.0"
+TPM2_PT_LEVEL:
+  raw: 0
+TPM2_PT_REVISION:
+  raw: 0xA4
+  value: 1.64
+TPM2_PT_DAY_OF_YEAR:
+  raw: 0x4B
+TPM2_PT_YEAR:
+  raw: 0x7E5
+TPM2_PT_MANUFACTURER:
+  raw: 0x49424D00
+  value: "IBM"
+TPM2_PT_VENDOR_STRING_1:
+  raw: 0x53572020
+  value: "SW"
+TPM2_PT_VENDOR_STRING_2:
+  raw: 0x2054504D
+  value: "TPM"
+TPM2_PT_VENDOR_STRING_3:
+  raw: 0x0
+  value: ""
+TPM2_PT_VENDOR_STRING_4:
+  raw: 0x0
+  value: ""
+TPM2_PT_VENDOR_TPM_TYPE:
+  raw: 0x1
+TPM2_PT_FIRMWARE_VERSION_1:
+  raw: 0x20191023
+TPM2_PT_FIRMWARE_VERSION_2:
+  raw: 0x163636
+TPM2_PT_INPUT_BUFFER:
+  raw: 0x400
+TPM2_PT_HR_TRANSIENT_MIN:
+  raw: 0x3
+TPM2_PT_HR_PERSISTENT_MIN:
+  raw: 0x7
+TPM2_PT_HR_LOADED_MIN:
+  raw: 0x3
+TPM2_PT_ACTIVE_SESSIONS_MAX:
+  raw: 0x40
+TPM2_PT_PCR_COUNT:
+  raw: 0x18
+TPM2_PT_PCR_SELECT_MIN:
+  raw: 0x3
+TPM2_PT_CONTEXT_GAP_MAX:
+  raw: 0xFFFF
+TPM2_PT_NV_COUNTERS_MAX:
+  raw: 0x0
+TPM2_PT_NV_INDEX_MAX:
+  raw: 0x800
+TPM2_PT_MEMORY:
+  raw: 0x6
+TPM2_PT_CLOCK_UPDATE:
+  raw: 0x1000
+TPM2_PT_CONTEXT_HASH:
+  raw: 0xD
+TPM2_PT_CONTEXT_SYM:
+  raw: 0x6
+TPM2_PT_CONTEXT_SYM_SIZE:
+  raw: 0x100
+TPM2_PT_ORDERLY_COUNT:
+  raw: 0xFF
+TPM2_PT_MAX_COMMAND_SIZE:
+  raw: 0x1000
+TPM2_PT_MAX_RESPONSE_SIZE:
+  raw: 0x1000
+TPM2_PT_MAX_DIGEST:
+  raw: 0x40
+TPM2_PT_MAX_OBJECT_CONTEXT:
+  raw: 0xA84
+TPM2_PT_MAX_SESSION_CONTEXT:
+  raw: 0x194
+TPM2_PT_PS_FAMILY_INDICATOR:
+  raw: 0x322E3000
+TPM2_PT_PS_LEVEL:
+  raw: 0x0
+TPM2_PT_PS_REVISION:
+  raw: 0xA4
+TPM2_PT_PS_DAY_OF_YEAR:
+  raw: 0x4B
+TPM2_PT_PS_YEAR:
+  raw: 0x7E5
+TPM2_PT_SPLIT_MAX:
+  raw: 0x80
+TPM2_PT_TOTAL_COMMANDS:
+  raw: 0x6E
+TPM2_PT_LIBRARY_COMMANDS:
+  raw: 0x6E
+TPM2_PT_VENDOR_COMMANDS:
+  raw: 0x0
+TPM2_PT_NV_BUFFER_MAX:
+  raw: 0x400
+TPM2_PT_MODES:
+  raw: 0x0
+Initializing TPM keys...
+[INFO] ARM64 Linux detected - using PREFIX=/usr/local
+[STEP] Using TPM2TOOLS_TCTI=swtpm:host=127.0.0.1,port=2321
+[STEP] EK handle will be 0x81010001
+[STEP] AK handle will be 0x8101000A
+[STEP] Flushing transient/session handles...
+[STEP] Evicting existing EK/AK persistent handles (if any)...
+6a7713240720e815b6e3f89b213a506d437eb9821527e7f12ceacae9f0e9dcb8
+6a7713240720e815b6e3f89b213a506d437eb9821527e7f12ceacae9f0e9dcb8
+Untagged: infiniteedge-test-aegis-edge-ai-1761200533:latest
+Deleted: sha256:cc77c57bcc63988e33995f35267dfe6caf3bcda67b9908512530290a79f014b1
+Test completed: Wed Oct 22 11:22:40 PM PDT 2025
