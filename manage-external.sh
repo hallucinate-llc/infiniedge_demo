@@ -50,7 +50,7 @@ build_container() {
     print_header "Building External Orchestrator Container"
     
     print_info "Building container with all services..."
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" build --no-cache; then
+    if docker compose -f "$DOCKER_COMPOSE_FILE" build --no-cache; then
         print_success "Container built successfully"
         
         # Show container size
@@ -67,7 +67,7 @@ start_services() {
     print_header "Starting External Orchestrator"
     
     print_info "Starting container with all services..."
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" up -d; then
+    if docker compose -f "$DOCKER_COMPOSE_FILE" up -d; then
         print_success "Container started successfully"
         
         # Wait for services to be ready
@@ -102,7 +102,7 @@ start_services() {
 stop_services() {
     print_header "Stopping External Orchestrator"
     
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" down; then
+    if docker compose -f "$DOCKER_COMPOSE_FILE" down; then
         print_success "Container stopped successfully"
     else
         print_error "Failed to stop container"
@@ -242,7 +242,7 @@ clean_up() {
     
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         print_info "Stopping and removing container..."
-        docker-compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans
+        docker compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans
         
         print_info "Removing container image..."
         docker rmi "infiniedge_demo_infiniedge-orchestrator" 2>/dev/null || true
