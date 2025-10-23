@@ -1,27 +1,27 @@
 [submodule "AIOps"]
 	path = AIOps
-	url = https://github.com/lfedgeai/AIOps.git
+	url = https://github.com/hallucinate-llc/AIOps.git
 [submodule "eda"]
 	path = eda
-	url = https://github.com/lfedgeai/eda.git
+	url = https://github.com/hallucinate-llc/eda.git
 [submodule "yomo"]
 	path = yomo
-	url = https://github.com/lfedgeai/yomo.git
+	url = https://github.com/hallucinate-llc/yomo.git
 [submodule "shifu"]
 	path = shifu
-	url = https://github.com/lfedgeai/shifu.git
+	url = https://github.com/hallucinate-llc/shifu.git
 [submodule "edge-whisper"]
 	path = edge-whisper
-	url = https://github.com/lfedgeai/edge-whisper.git
+	url = https://github.com/hallucinate-llc/edge-whisper.git
 [submodule "transformers"]
 	path = transformers
-	url = https://github.com/lfedgeai/transformers.git
+	url = https://github.com/hallucinate-llc/transformers.git
 [submodule "Megatron-LM"]
 	path = Megatron-LM
-	url = https://github.com/lfedgeai/Megatron-LM.git
+	url = https://github.com/hallucinate-llc/Megatron-LM.git
 [submodule "Whisper-Finetune"]
 	path = Whisper-Finetune
-	url = https://github.com/lfedgeai/Whisper-Finetune.git
+	url = https://github.com/hallucinate-llc/Whisper-Finetune.git
 [submodule "AegisEdgeAI"]
 	path = AegisEdgeAI
 	url = https://github.com/hallucinate-llc/AegisEdgeAI.git
