@@ -26,14 +26,14 @@ echo "-------------------"
 declare -A SUBMODULES=(
     ["AIOps"]="hallucinate-llc/AIOps.git"
     ["AegisEdgeAI"]="hallucinate-llc/AegisEdgeAI.git"
-    ["Megatron-LM"]="lfedgeai/Megatron-LM.git (upstream: NVIDIA)"
+    ["Megatron-LM"]="hallucinate-llc/Megatron-LM.git"
     ["SPEAR"]="hallucinate-llc/SPEAR.git"
-    ["Whisper-Finetune"]="lfedgeai/Whisper-Finetune.git (upstream: yeyupiaoliang)"
+    ["Whisper-Finetune"]="hallucinate-llc/Whisper-Finetune.git"
     ["eda"]="hallucinate-llc/eda.git"
     ["edge-whisper"]="hallucinate-llc/edge-whisper.git"
-    ["shifu"]="lfedgeai/shifu.git (upstream: Edgenesis)"
-    ["transformers"]="lfedgeai/transformers.git (upstream: huggingface)"
-    ["yomo"]="lfedgeai/yomo.git (upstream: yomorun)"
+    ["shifu"]="hallucinate-llc/shifu.git"
+    ["transformers"]="hallucinate-llc/transformers.git"
+    ["yomo"]="hallucinate-llc/yomo.git"
 )
 
 for submodule in "${!SUBMODULES[@]}"; do
