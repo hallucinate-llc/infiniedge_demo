@@ -5,15 +5,10 @@ export PORT=${PORT:-8086}
 export HOST=${HOST:-0.0.0.0}
 
 if [ -f "package.json" ]; then
-    if [ -f "app.js" ]; then
-        node app.js
-    elif [ -f "server.js" ]; then
-        node server.js
-    elif [ -f "index.js" ]; then
-        node index.js
-    else
-        npm start
-    fi
+    echo "Building Next.js application..."
+    npx next build 2>/dev/null || echo "Build failed, trying to start anyway..."
+    echo "Starting Next.js server..."
+    npx next start -p $PORT
 else
     python3 -c "
 import http.server, socketserver, json

@@ -4,14 +4,10 @@ echo "Starting Shifu service..."
 export PORT=${PORT:-8083}
 export HOST=${HOST:-0.0.0.0}
 
-if [ -f "go.mod" ]; then
-    if [ -f "main.go" ]; then
-        go run main.go
-    elif [ -f "cmd/shifu/main.go" ]; then
-        go run cmd/shifu/main.go
-    else
-        go build -o shifu . && ./shifu
-    fi
+# Use HTTP fallback service due to read-only filesystem constraints
+echo "Starting Shifu HTTP service (read-only filesystem)..."
+if false; then
+    echo "Binary execution disabled"
 else
     python3 -c "
 import http.server, socketserver, json

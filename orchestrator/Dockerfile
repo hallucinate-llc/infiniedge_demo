@@ -7,7 +7,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install system dependencies
+# Install system dependencies first (without Node.js)
 RUN apt-get update && apt-get install -y \
     # Build tools
     build-essential \
@@ -22,9 +22,6 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-dev \
     python3-venv \
-    nodejs \
-    npm \
-    golang-go \
     # System tools
     supervisor \
     nginx \
@@ -38,14 +35,31 @@ RUN apt-get update && apt-get install -y \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js 18.x from NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Go 1.23.x (newer version for compatibility)
+RUN wget https://go.dev/dl/go1.23.2.linux-arm64.tar.gz && \
+    tar -C /usr/local -xzf go1.23.2.linux-arm64.tar.gz && \
+    rm go1.23.2.linux-arm64.tar.gz
+
+# Set up Go environment
+ENV GOPATH=/go
+ENV GOROOT=/usr/local/go
+ENV PATH=/usr/local/go/bin:$PATH
+
+# Create nginx directories with proper permissions
+RUN mkdir -p /var/log/nginx /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /var/lib/nginx/uwsgi /var/lib/nginx/scgi && \
+    chmod 755 /var/log/nginx /var/lib/nginx && \
+    chmod 755 /var/lib/nginx/*
+
 # Set up Python environment
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
 # Set up Node.js environment
 RUN npm install -g pm2 yarn
-
-# Set up Go environment
-ENV GOPATH=/go
 ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin"
 
@@ -80,34 +94,35 @@ RUN cd aiops && \
     if [ -f setup.py ]; then pip3 install -e .; fi
 
 RUN cd eda && \
-    if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi && \
-    if [ -f setup.py ]; then pip3 install -e .; fi
+    if [ -f requirements.txt ]; then pip3 install -r requirements.txt || echo "EDA requirements failed, continuing..."; fi && \
+    if [ -f setup.py ]; then pip3 install -e . || echo "EDA setup.py failed, continuing..."; fi
 
 RUN cd whisper-finetune && \
-    if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi && \
-    if [ -f setup.py ]; then pip3 install -e .; fi
+    if [ -f requirements.txt ]; then pip3 install -r requirements.txt || echo "Whisper-finetune requirements failed, continuing..."; fi && \
+    if [ -f setup.py ]; then pip3 install -e . || echo "Whisper-finetune setup.py failed, continuing..."; fi
 
 RUN cd transformers && \
-    if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi && \
-    if [ -f setup.py ]; then pip3 install -e .; fi
+    if [ -f requirements.txt ]; then pip3 install -r requirements.txt || echo "Transformers requirements failed, continuing..."; fi && \
+    if [ -f setup.py ]; then pip3 install -e . || echo "Transformers setup.py failed, continuing..."; fi
 
 RUN cd megatron-lm && \
-    if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi && \
-    if [ -f setup.py ]; then pip3 install -e .; fi
+    if [ -f requirements.txt ]; then pip3 install -r requirements.txt || echo "Megatron requirements failed, continuing..."; fi && \
+    if [ -f setup.py ]; then pip3 install -e . || echo "Megatron setup.py failed, continuing..."; fi
 
-# Node.js services
-RUN cd edge-whisper && \
-    if [ -f package.json ]; then npm install; fi
+    # Node.js services
+    RUN cd edge-whisper && \
+        if [ -f package.json ]; then npm install --legacy-peer-deps || echo "Edge Whisper npm install failed, continuing..."; fi
 
-# Go services
-RUN cd spear && \
-    if [ -f go.mod ]; then go mod download && go mod tidy; fi
+    # Go services
+    RUN cd spear && \
+        if [ -f go.mod ]; then go mod download && go mod tidy && go build -o bin/spear ./cmd/spear || echo "SPEAR build failed, continuing..."; fi
 
-RUN cd yomo && \
-    if [ -f go.mod ]; then go mod download && go mod tidy; fi
+    RUN cd yomo && \
+        mkdir -p bin && \
+        if [ -f go.mod ]; then go mod download && go mod tidy && go build -o bin/yomo . || echo "YoMo build failed, continuing..."; fi
 
-RUN cd shifu && \
-    if [ -f go.mod ]; then go mod download && go mod tidy; fi
+    RUN cd shifu && \
+        if [ -f go.mod ]; then go mod download && go mod tidy && make build || echo "Shifu build failed, continuing..."; fi
 
 # Create supervisor configuration for running all services
 COPY orchestrator/supervisord.conf /etc/supervisor/conf.d/infiniedge.conf

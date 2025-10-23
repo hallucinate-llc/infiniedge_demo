@@ -34,30 +34,30 @@ services:
     # Expose all service ports
     ports:
       # Main gateway
-      - "80:80"
-      - "443:443"
+      - "8888:80"
+      - "8443:443"
       
       # Individual service ports (for direct access)
-      - "8080:8080"  # AegisEdgeAI
-      - "8081:8081"  # SPEAR
-      - "8082:8082"  # YoMo
-      - "8083:8083"  # Shifu
-      - "8084:8084"  # AIOps
-      - "8085:8085"  # EDA
-      - "8086:8086"  # Edge Whisper
-      - "8087:8087"  # Whisper Finetune
-      - "8088:8088"  # Megatron-LM
-      - "8089:8089"  # Transformers
+      - "9080:8080"  # AegisEdgeAI
+      - "9081:8081"  # SPEAR
+      - "9082:8082"  # YoMo
+      - "9083:8083"  # Shifu
+      - "9084:8084"  # AIOps
+      - "9085:8085"  # EDA
+      - "9086:8086"  # Edge Whisper
+      - "9087:8087"  # Whisper Finetune
+      - "9088:8088"  # Megatron-LM
+      - "9089:8089"  # Transformers
       
       # Special service ports
-      - "9000:9000"  # YoMo Zipper
-      - "9001:9001"  # Additional port 1
-      - "9002:9002"  # Additional port 2
-      - "9003:9003"  # Additional port 3
+      - "9100:9000"  # YoMo Zipper
+      - "9101:9001"  # Additional port 1
+      - "9102:9002"  # Additional port 2
+      - "9103:9003"  # Additional port 3
       
       # Monitoring ports
-      - "3000:3000"  # Grafana (if enabled)
-      - "5000:5000"  # Additional monitoring
+      - "9300:3000"  # Grafana (if enabled)
+      - "9500:5000"  # Additional monitoring
     
     # Volume mounts
     volumes:

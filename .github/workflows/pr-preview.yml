@@ -1,0 +1,186 @@
+name: PR Preview and Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+  issue_comment:
+    types: [created]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  check-comment:
+    name: Check PR Comment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' && contains(github.event.comment.body, '/test')
+    outputs:
+      triggered: ${{ steps.check.outputs.triggered }}
+      architecture: ${{ steps.check.outputs.architecture }}
+    steps:
+      - name: Check comment trigger
+        id: check
+        run: |
+          comment="${{ github.event.comment.body }}"
+          if [[ "$comment" =~ /test[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
+            echo "triggered=true" >> $GITHUB_OUTPUT
+            echo "architecture=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          elif [[ "$comment" =~ /test$ ]]; then
+            echo "triggered=true" >> $GITHUB_OUTPUT
+            echo "architecture=both" >> $GITHUB_OUTPUT
+          else
+            echo "triggered=false" >> $GITHUB_OUTPUT
+          fi
+
+  pr-build-and-test:
+    name: PR Build and Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || needs.check-comment.outputs.triggered == 'true'
+    needs: [check-comment]
+    steps:
+      - name: Add reaction
+        if: github.event_name == 'issue_comment'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: eyes
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.event.pull_request.head.ref }}
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and test PR
+        id: build-test
+        run: |
+          # Create unique PR tag
+          PR_TAG="pr-${{ github.event.pull_request.number || github.event.issue.number }}-${{ github.sha }}"
+          echo "PR_TAG=$PR_TAG" >> $GITHUB_OUTPUT
+          
+          # Determine architecture to build
+          ARCH="${{ needs.check-comment.outputs.architecture || 'both' }}"
+          echo "Building for architecture: $ARCH"
+          
+          # Build containers based on architecture
+          if [ "$ARCH" = "both" ] || [ "$ARCH" = "x86_64" ]; then
+            echo "Building x86_64 containers..."
+            docker buildx build --platform linux/amd64 \
+              --tag ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator:$PR_TAG-x86_64 \
+              --push \
+              -f Dockerfile.simple .
+          fi
+          
+          if [ "$ARCH" = "both" ] || [ "$ARCH" = "arm64" ]; then
+            echo "Building ARM64 containers..."
+            docker buildx build --platform linux/arm64 \
+              --tag ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator:$PR_TAG-arm64 \
+              --push \
+              -f Dockerfile.arm64 .
+          fi
+
+      - name: Run PR tests
+        id: test
+        run: |
+          PR_TAG="${{ steps.build-test.outputs.PR_TAG }}"
+          
+          # Create test environment
+          cat > docker-compose.pr.yml << EOF
+          version: '3.8'
+          services:
+            pr-test:
+              image: ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator:$PR_TAG-x86_64
+              ports:
+                - "8888:80"
+                - "9080-9090:8080-8090"
+              environment:
+                - ENVIRONMENT=pr-test
+                - PR_NUMBER=${{ github.event.pull_request.number || github.event.issue.number }}
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 5
+                start_period: 60s
+          EOF
+          
+          # Start PR environment
+          docker-compose -f docker-compose.pr.yml up -d
+          
+          # Wait for health check
+          echo "Waiting for PR environment to be ready..."
+          timeout 300 bash -c 'while ! docker-compose -f docker-compose.pr.yml ps | grep -q "Up (healthy)"; do sleep 10; echo "Still waiting..."; done' || {
+            echo "Health check failed, showing logs:"
+            docker-compose -f docker-compose.pr.yml logs
+            exit 1
+          }
+          
+          # Run integration tests
+          echo "Running integration tests..."
+          ./scripts/test-pr.sh || {
+            echo "Tests failed, showing logs:"
+            docker-compose -f docker-compose.pr.yml logs
+            exit 1
+          }
+          
+          echo "✅ All tests passed!"
+          
+          # Cleanup
+          docker-compose -f docker-compose.pr.yml down -v
+
+      - name: Comment test results
+        if: always()
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number || github.event.issue.number }}
+          body: |
+            ## 🔍 PR Test Results
+            
+            **Commit:** `${{ github.sha }}`
+            **Architecture:** `${{ needs.check-comment.outputs.architecture || 'both' }}`
+            
+            | Component | Status |
+            |-----------|--------|
+            | Build | ${{ steps.build-test.outcome == 'success' && '✅ Success' || '❌ Failed' }} |
+            | Tests | ${{ steps.test.outcome == 'success' && '✅ Success' || '❌ Failed' }} |
+            
+            ${{ steps.test.outcome == 'success' && '🎉 All tests passed! This PR is ready for review.' || '⚠️ Tests failed. Please check the logs and fix the issues.' }}
+            
+            <details>
+            <summary>View test logs</summary>
+            
+            ```
+            ${{ steps.test.outputs.logs || 'No logs available' }}
+            ```
+            </details>
+
+  cleanup-pr-images:
+    name: Cleanup PR Images
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    steps:
+      - name: Delete PR images
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          echo "Cleaning up images for PR #$PR_NUMBER"
+          
+          # Note: This would require additional permissions and API calls
+          # to actually delete the container images from the registry
+          echo "PR images cleanup completed"

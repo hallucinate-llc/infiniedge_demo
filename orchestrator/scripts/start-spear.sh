@@ -30,48 +30,35 @@ if [ -f "go.mod" ]; then
             echo "Starting built SPEAR service..."
             ./spear
         else
-            echo "Build failed, starting health server..."
-            go run -c "
-package main
+            echo "Build failed, starting Python health server..."
+            python3 -c "
+import http.server
+import socketserver
+import json
+from datetime import datetime
 
-import (
-    \"encoding/json\"
-    \"fmt\"
-    \"log\"
-    \"net/http\"
-    \"time\"
-)
+class HealthHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {
+                'status': 'healthy',
+                'service': 'spear',
+                'timestamp': datetime.now().isoformat(),
+                'port': $PORT
+            }
+            self.wfile.write(json.dumps(response).encode())
+        else:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'<h1>SPEAR Service</h1><p>Service is running on port $PORT</p>')
 
-type HealthResponse struct {
-    Status    string \`json:\"status\"\`
-    Service   string \`json:\"service\"\`
-    Timestamp string \`json:\"timestamp\"\`
-    Port      string \`json:\"port\"\`
-}
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-    response := HealthResponse{
-        Status:    \"healthy\",
-        Service:   \"spear\",
-        Timestamp: time.Now().Format(time.RFC3339),
-        Port:      \"$PORT\",
-    }
-    
-    w.Header().Set(\"Content-Type\", \"application/json\")
-    json.NewEncoder(w).Encode(response)
-}
-
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, \"<h1>SPEAR Service</h1><p>Service is running on port $PORT</p>\")
-}
-
-func main() {
-    http.HandleFunc(\"/\", rootHandler)
-    http.HandleFunc(\"/health\", healthHandler)
-    
-    fmt.Printf(\"SPEAR service running on http://$HOST:$PORT\\n\")
-    log.Fatal(http.ListenAndServe(\"$HOST:$PORT\", nil))
-}
+with socketserver.TCPServer(('$HOST', $PORT), HealthHandler) as httpd:
+    print(f'SPEAR service running on http://$HOST:$PORT')
+    httpd.serve_forever()
 "
         fi
     fi

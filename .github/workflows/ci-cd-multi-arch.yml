@@ -1,0 +1,399 @@
+name: InfiniteEdge Multi-Architecture CI/CD
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'dgx_spark' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      build_architecture:
+        description: 'Architecture to build'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - x86_64
+          - arm64
+      run_tests:
+        description: 'Run integration tests'
+        required: false
+        default: true
+        type: boolean
+      deploy_mode:
+        description: 'Deployment mode'
+        required: false
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      aegis: ${{ steps.changes.outputs.aegis }}
+      spear: ${{ steps.changes.outputs.spear }}
+      yomo: ${{ steps.changes.outputs.yomo }}
+      shifu: ${{ steps.changes.outputs.shifu }}
+      orchestrator: ${{ steps.changes.outputs.orchestrator }}
+      workflows: ${{ steps.changes.outputs.workflows }}
+      all: ${{ steps.changes.outputs.all }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            aegis:
+              - 'AegisEdgeAI/**'
+            spear:
+              - 'SPEAR/**'
+            yomo:
+              - 'yomo/**'
+            shifu:
+              - 'shifu/**'
+            orchestrator:
+              - 'orchestrator/**'
+              - 'docker-compose*.yml'
+              - 'Dockerfile*'
+            workflows:
+              - '.github/workflows/**'
+            all:
+              - '**'
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  build-matrix:
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: [ detect-changes, security-scan ]
+    if: needs.detect-changes.outputs.all == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runner: ubuntu-latest
+            platform: linux/arm64
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ matrix.platform }}
+
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+          flavor: |
+            suffix=-${{ matrix.arch }}
+
+      # Build individual service containers
+      - name: Build AegisEdgeAI
+        if: needs.detect-changes.outputs.aegis == 'true' || needs.detect-changes.outputs.all == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./AegisEdgeAI
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/aegis-edge-ai:${{ github.sha }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=aegis-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=aegis-${{ matrix.arch }}
+
+      - name: Build SPEAR
+        if: needs.detect-changes.outputs.spear == 'true' || needs.detect-changes.outputs.all == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./SPEAR
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/spear:${{ github.sha }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=spear-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=spear-${{ matrix.arch }}
+
+      - name: Build YoMo
+        if: needs.detect-changes.outputs.yomo == 'true' || needs.detect-changes.outputs.all == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./yomo
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/yomo:${{ github.sha }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=yomo-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=yomo-${{ matrix.arch }}
+
+      - name: Build Shifu
+        if: needs.detect-changes.outputs.shifu == 'true' || needs.detect-changes.outputs.all == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./shifu
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/shifu:${{ github.sha }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=shifu-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=shifu-${{ matrix.arch }}
+
+      # Build orchestrator containers
+      - name: Build External Orchestrator
+        if: needs.detect-changes.outputs.orchestrator == 'true' || needs.detect-changes.outputs.all == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.simple
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator:${{ github.sha }}-${{ matrix.arch }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator:latest-${{ matrix.arch }}
+          cache-from: type=gha,scope=orchestrator-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=orchestrator-${{ matrix.arch }}
+
+      - name: Build ARM64 Orchestrator
+        if: (needs.detect-changes.outputs.orchestrator == 'true' || needs.detect-changes.outputs.all == 'true') && matrix.arch == 'arm64'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.arm64
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator-arm64:${{ github.sha }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=orchestrator-arm64-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=orchestrator-arm64-${{ matrix.arch }}
+
+  test-integration:
+    name: Integration Tests (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: [ build-matrix, detect-changes ]
+    if: (needs.detect-changes.outputs.all == 'true' || github.event_name == 'workflow_dispatch') && (github.event.inputs.run_tests == 'true' || github.event.inputs.run_tests == '')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            runner: ubuntu-latest
+            platform: linux/arm64
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ matrix.platform }}
+
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create test docker-compose
+        run: |
+          cat > docker-compose.test.yml << EOF
+          version: '3.8'
+          services:
+            orchestrator-test:
+              image: ${{ env.REGISTRY }}/${{ github.repository }}/orchestrator:${{ github.sha }}-${{ matrix.arch }}
+              platform: ${{ matrix.platform }}
+              ports:
+                - "8888:80"
+                - "9080-9090:8080-8090"
+              environment:
+                - ENVIRONMENT=test
+                - ARCH=${{ matrix.arch }}
+              healthcheck:
+                test: ["CMD", "curl", "-f", "http://localhost/health"]
+                interval: 30s
+                timeout: 10s
+                retries: 3
+                start_period: 60s
+          EOF
+
+      - name: Run integration tests
+        run: |
+          # Start services
+          docker-compose -f docker-compose.test.yml up -d
+          
+          # Wait for services to be ready
+          timeout 300 bash -c 'while ! docker-compose -f docker-compose.test.yml ps | grep -q "Up (healthy)"; do sleep 10; echo "Waiting for services..."; done'
+          
+          # Run tests
+          ./scripts/test-integration-${{ matrix.arch }}.sh
+          
+          # Cleanup
+          docker-compose -f docker-compose.test.yml down -v
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ matrix.arch }}
+          path: |
+            test-results/
+            logs/
+
+  create-manifest:
+    name: Create Multi-Arch Manifest
+    runs-on: ubuntu-latest
+    needs: [ build-matrix, test-integration ]
+    if: always() && (needs.build-matrix.result == 'success')
+    
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifest
+        run: |
+          # Create multi-arch manifests for each component
+          components=("orchestrator" "aegis-edge-ai" "spear" "yomo" "shifu")
+          
+          for component in "${components[@]}"; do
+            echo "Creating manifest for $component..."
+            
+            docker manifest create ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }} \
+              ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-x86_64 \
+              ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-arm64
+            
+            docker manifest annotate ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }} \
+              ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-x86_64 --arch amd64
+            
+            docker manifest annotate ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }} \
+              ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-arm64 --arch arm64
+            
+            docker manifest push ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}
+            
+            # Create latest tag for main branch
+            if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+              docker manifest create ${{ env.REGISTRY }}/${{ github.repository }}/$component:latest \
+                ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-x86_64 \
+                ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-arm64
+              
+              docker manifest annotate ${{ env.REGISTRY }}/${{ github.repository }}/$component:latest \
+                ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-x86_64 --arch amd64
+              
+              docker manifest annotate ${{ env.REGISTRY }}/${{ github.repository }}/$component:latest \
+                ${{ env.REGISTRY }}/${{ github.repository }}/$component:${{ github.sha }}-arm64 --arch arm64
+              
+              docker manifest push ${{ env.REGISTRY }}/${{ github.repository }}/$component:latest
+            fi
+          done
+
+  deploy:
+    name: Deploy (${{ github.event.inputs.deploy_mode || 'test' }})
+    runs-on: ubuntu-latest
+    needs: [ create-manifest, test-integration ]
+    if: always() && (needs.create-manifest.result == 'success') && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    environment:
+      name: ${{ github.event.inputs.deploy_mode || 'test' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to environment
+        run: |
+          echo "Deploying to ${{ github.event.inputs.deploy_mode || 'test' }} environment..."
+          ./scripts/deploy.sh ${{ github.event.inputs.deploy_mode || 'test' }} ${{ github.sha }}
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [ build-matrix, test-integration, create-manifest, deploy ]
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build-matrix.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test-integration.result == 'success' && '✅ Success' || needs.test-integration.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Manifest | ${{ needs.create-manifest.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.result == 'success' && '✅ Success' || needs.deploy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

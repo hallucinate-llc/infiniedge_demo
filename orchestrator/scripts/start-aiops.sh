@@ -30,4 +30,23 @@ with socketserver.TCPServer(('$HOST', $PORT), Handler) as httpd:
 "
 else
     echo "Starting generic AIOps service..."
+    python3 -c "
+import http.server, socketserver, json
+from datetime import datetime
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'status': 'healthy', 'service': 'aiops', 'timestamp': datetime.now().isoformat(), 'port': $PORT}).encode())
+        else:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'<h1>AIOps Service</h1><p>AI Operations Platform</p><p>Demo available in /demo directory</p>')
+with socketserver.TCPServer(('$HOST', $PORT), Handler) as httpd:
+    print(f'AIOps service running on http://$HOST:$PORT')
+    httpd.serve_forever()
+"
 fi
