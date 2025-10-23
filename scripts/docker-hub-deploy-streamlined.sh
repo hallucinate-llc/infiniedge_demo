@@ -40,6 +40,7 @@ log_section() {
 
 # Working containers configuration
 declare -A WORKING_CONTAINERS=(
+    ["orchestrator"]="orchestrator/Dockerfile.working:."
     ["aegis-edge-ai"]="AegisEdgeAI/Dockerfile.simple:AegisEdgeAI"
     ["yomo"]="yomo/Dockerfile.infiniedge:yomo"
     ["transformers"]="transformers/Dockerfile.infiniedge:transformers"
